@@ -3,6 +3,11 @@ C-general-purpose-dict
 
 A small, zero-dependency, general purpose hash table which uses CRC32 as a hashing mechanism, and separate chaining for collision resolution. It takes a string as the hash key, and a pointer to anything as the value.
 
+TODO
+====
+
+- Provide the ability to pass in a free(), to call on key/value pairs when deleted.
+
 Data Structures
 ===============
 
