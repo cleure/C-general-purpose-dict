@@ -43,18 +43,36 @@ TODO: DESCRIPTION
 
 void dict_delete(struct dict *dict);
 
+TODO: DESCRIPTION
+
 int dict_set(struct dict *dict, char *key, void *value);
+
+TODO: DESCRIPTION
 
 struct dict_node *dict_get(struct dict *dict, char *key);
 
+TODO: DESCRIPTION
+
 int dict_del(struct dict *dict, char *key);
+
+TODO: DESCRIPTION
 
 int dict_contains(struct dict *dict, char *key);
 
+TODO: DESCRIPTION
+
 void dict_iterate_start(struct dict *dict, struct dict_iterator *it);
+
+TODO: DESCRIPTION
 
 struct dict_node *dict_iterate_next(struct dict_iterator *it);
 
+TODO: DESCRIPTION
+
 struct dict_node *dict_iterate_difference(struct dict *b, struct dict_iterator *it);
 
+TODO: DESCRIPTION
+
 struct dict_node *dict_iterate_intersection(struct dict *b, struct dict_iterator *it);
+
+TODO: DESCRIPTION
