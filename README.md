@@ -6,7 +6,9 @@ A small, zero-dependency, general purpose hash table which uses CRC32 as a hashi
 TODO
 ====
 
-- Provide the ability to pass in a free(), to call on key/value pairs when deleted.
+- More complete code comments.
+- More complete documentation.
+- Thoroughly test free() logic.
 
 Data Structures
 ===============
