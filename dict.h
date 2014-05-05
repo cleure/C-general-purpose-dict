@@ -18,6 +18,9 @@ struct dict {
     struct dict_node *table;
     uint32_t capacity;
     uint32_t seed;
+	
+	void (*key_free_fn)(void *);
+	void (*value_free_fn)(void *);
 };
 
 struct dict_iterator {
@@ -26,7 +29,7 @@ struct dict_iterator {
     uint32_t idx;
 };
 
-struct dict *dict_new(uint32_t seed, size_t capacity);
+struct dict *dict_new(uint32_t seed, size_t capacity, void (*key_free_fn)(void *), void (*value_free_fn)(void *));
 int dict_resize(struct dict *dict, uint32_t capacity);
 void dict_clear(struct dict *dict);
 void dict_delete(struct dict *dict);

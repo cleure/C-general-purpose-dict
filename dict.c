@@ -8,7 +8,7 @@
 #include "crc32.h"
 #include "dict.h"
 
-struct dict *dict_new(uint32_t seed, size_t capacity)
+struct dict *dict_new(uint32_t seed, size_t capacity, void (*key_free_fn)(void *), void (*value_free_fn)(void *))
 {
     struct dict *dict;
     struct dict_node *table;
@@ -31,6 +31,8 @@ struct dict *dict_new(uint32_t seed, size_t capacity)
     dict->used = 0;
     dict->seed = seed;
     dict->table = table;
+	dict->key_free_fn = key_free_fn;
+	dict->value_free_fn = value_free_fn;
     
     return dict;
 }
@@ -47,9 +49,30 @@ void dict_clear(struct dict *dict)
             while (cur) {
                 prev = cur;
                 cur = cur->next;
+				
+				// Free key?
+				if (dict->key_free_fn != NULL) {
+					dict->key_free_fn(prev->key);
+				}
+				
+				// Free value?
+				if (dict->value_free_fn != NULL) {
+					dict->value_free_fn(prev->value);
+				}
+				
                 free(prev);
             }
             
+			// Free key?
+			if (dict->key_free_fn != NULL) {
+				dict->key_free_fn(dict->table[i].key);
+			}
+			
+			// Free value?
+			if (dict->value_free_fn != NULL) {
+				dict->value_free_fn(dict->table[i].value);
+			}
+			
             dict->table[i].hash = 0;
             dict->table[i].key = NULL;
             dict->table[i].value = NULL;
@@ -75,7 +98,9 @@ int dict_resize(struct dict *dict, uint32_t capacity)
     uint32_t capacity_tmp;
     size_t i;
     
-    dict_tmp = dict_new(dict->seed, capacity);
+	// We pass in NULL as the free functions, otherwise we'll destroy memory
+	// that we want to keep around.
+    dict_tmp = dict_new(dict->seed, capacity, NULL, NULL);
     if (dict_tmp == NULL) {
         return 0;
     }
@@ -106,6 +131,8 @@ int dict_resize(struct dict *dict, uint32_t capacity)
     return 1;
 }
 
+// NOTE: If an insert fails, and you have free functions set, this
+// WILL call free() on the key/value.
 int dict_set(struct dict *dict, char *key, void *value)
 {
     struct dict_node *cur;
@@ -124,6 +151,16 @@ int dict_set(struct dict *dict, char *key, void *value)
         dict->used++;
         return 1;
     } else if (cur->hash == hash && strcmp(cur->key, key) == 0) {
+		// Free key?
+		if (dict->key_free_fn) {
+			dict->key_free_fn(cur->key);
+		}
+
+		// Free value?
+		if (dict->value_free_fn) {
+			dict->key_free_fn(cur->value);
+		}
+	
         cur->hash = hash;
         cur->key = key;
         cur->value = value;
@@ -132,6 +169,16 @@ int dict_set(struct dict *dict, char *key, void *value)
     
     node = malloc(sizeof(*node));
     if (node == NULL) {
+		// Free key?
+		if (dict->key_free_fn) {
+			dict->key_free_fn(key);
+		}
+
+		// Free value?
+		if (dict->value_free_fn) {
+			dict->key_free_fn(value);
+		}
+		
         return 0;
     }
     
@@ -213,6 +260,14 @@ int dict_del(struct dict *dict, char *key)
     
     do {
         if (cur->hash == hash && strcmp(cur->key, key) == 0) {
+			if (dict->key_free_fn) {
+				dict->key_free_fn(cur->key);
+			}
+			
+			if (dict->value_free_fn) {
+				dict->value_free_fn(cur->value);
+			}
+		
             if (prev != NULL) {
                 prev->next = cur->next;
                 free(cur);
