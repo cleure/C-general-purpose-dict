@@ -8,7 +8,19 @@
 #include "crc32.h"
 #include "dict.h"
 
-struct dict *dict_new(uint32_t seed, size_t capacity, void (*key_free_fn)(void *), void (*value_free_fn)(void *))
+/**
+ * Creates a new dict object.
+ *
+ * @param   uint32_t seed - CRC32 Seed.
+ * @param   uint32_t capacity - Number of buckets to allocate.
+ * @param   void (*key_free_fn)(void *) - Either a function pointer, or NULL.
+ * @param   void (*value_free_fn)(void *) - Either a function pointer, or NULL.
+ *
+ * @return  struct dict *
+ *
+ * Returns a newly allocated struct dict pointer, or NULL on error.
+ **/
+struct dict *dict_new(uint32_t seed, uint32_t capacity, void (*key_free_fn)(void *), void (*value_free_fn)(void *))
 {
     struct dict *dict;
     struct dict_node *table;
@@ -37,6 +49,12 @@ struct dict *dict_new(uint32_t seed, size_t capacity, void (*key_free_fn)(void *
     return dict;
 }
 
+/**
+ * Clears all key/value pairs in dict object.
+ *
+ * @param   struct dict *dict
+ * @return  void
+ **/
 void dict_clear(struct dict *dict)
 {
     struct dict_node *cur;
@@ -83,6 +101,12 @@ void dict_clear(struct dict *dict)
     dict->used = 0;
 }
 
+/**
+ * Deletes a dict object, and frees all associated memory.
+ *
+ * @param   struct dict *dict
+ * @return  void
+ **/
 void dict_delete(struct dict *dict)
 {
     dict_clear(dict);
@@ -90,6 +114,15 @@ void dict_delete(struct dict *dict)
     free(dict);
 }
 
+/**
+ * Resizes a dict object.
+ *
+ * @param   struct dict *dict
+ * @param   uint32_t capacity
+ * @return  int
+ *
+ * Returns 1 on success, and 0 on error.
+ **/
 int dict_resize(struct dict *dict, uint32_t capacity)
 {
     struct dict *dict_tmp;
@@ -131,8 +164,18 @@ int dict_resize(struct dict *dict, uint32_t capacity)
     return 1;
 }
 
-// NOTE: If an insert fails, and you have free functions set, this
-// WILL call free() on the key/value.
+/**
+ * Set an item on dict object. NOTE: If an insert fails, and you have
+ * free functions set, this WONT call free() on the key/value. You are
+ * responsible for maintaining that memory.
+ *
+ * @param   struct dict *dict
+ * @param   char *key
+ * @param   void *value
+ * @return  int
+ *
+ * Returns 1 on success, and 0 on error.
+ **/
 int dict_set(struct dict *dict, char *key, void *value)
 {
     struct dict_node *cur;
@@ -169,16 +212,6 @@ int dict_set(struct dict *dict, char *key, void *value)
     
     node = malloc(sizeof(*node));
     if (node == NULL) {
-        // Free key?
-        if (dict->key_free_fn) {
-            dict->key_free_fn(key);
-        }
-
-        // Free value?
-        if (dict->value_free_fn) {
-            dict->key_free_fn(value);
-        }
-		
         return 0;
     }
     
@@ -192,6 +225,15 @@ int dict_set(struct dict *dict, char *key, void *value)
     return 1;
 }
 
+/**
+ * Check if dict contains key.
+ *
+ * @param    struct dict *dict
+ * @param    char *key
+ * @return   int
+ *
+ * Returns 1 if dict contains key, and 0 otherwise.
+ **/
 int dict_contains(struct dict *dict, char *key)
 {
     struct dict_node *cur;
@@ -217,6 +259,15 @@ int dict_contains(struct dict *dict, char *key)
     return 0;
 }
 
+/**
+ * Get an item from dict.
+ *
+ * @param   struct dict *dict
+ * @param   char *key
+ * @return  struct dict_node *
+ *
+ * Returns a pointer to the specified node, or NULL if it is not found.
+ **/
 struct dict_node *dict_get(struct dict *dict, char *key)
 {
     struct dict_node *cur;
@@ -242,6 +293,15 @@ struct dict_node *dict_get(struct dict *dict, char *key)
     return cur;
 }
 
+/**
+ * Deletes an item from dict.
+ *
+ * @param   struct dict *dict
+ * @param   char *key
+ * @return  int
+ *
+ * Returns 1 on successful delete, and 0 otherwise.
+ **/
 int dict_del(struct dict *dict, char *key)
 {
     struct dict_node *cur;
@@ -296,6 +356,13 @@ int dict_del(struct dict *dict, char *key)
     return status;
 }
 
+/**
+ * Start iterating over dict object.
+ *
+ * @param   struct dict *dict
+ * @param   struct dict_iterator *it
+ * @return  void
+ **/
 void dict_iterate_start(struct dict *dict, struct dict_iterator *it)
 {
     it->dict = dict;
@@ -303,6 +370,16 @@ void dict_iterate_start(struct dict *dict, struct dict_iterator *it)
     it->cur = NULL;
 }
 
+/**
+ * Iterate to next item in dict. Modifying a dict, while using this method has
+ * undefined behavior.
+ *
+ * @param   struct dict_iterator *it
+ * @return  struct dict_node *
+ *
+ * Returns a pointer to struct dict_node *, or NULL if iteration has
+ * completed.
+ **/
 struct dict_node *dict_iterate_next(struct dict_iterator *it)
 {
     struct dict_node *prev;
@@ -327,6 +404,17 @@ struct dict_node *dict_iterate_next(struct dict_iterator *it)
     return NULL;
 }
 
+/**
+ * Iterate, using difference. Modifying a dict, while using this method has
+ * undefined behavior.
+ *
+ * @param   struct dict *b
+ * @param   struct dict_iterator *it
+ * @return  struct dict_node *
+ *
+ * Returns a pointer to struct dict_node *, or NULL if iteration has
+ * completed.
+ **/
 struct dict_node *dict_iterate_difference(struct dict *b, struct dict_iterator *it)
 {
     struct dict_node *node;
@@ -343,6 +431,17 @@ struct dict_node *dict_iterate_difference(struct dict *b, struct dict_iterator *
     }
 }
 
+/**
+ * Iterate, using intersection. Modifying a dict, while using this method has
+ * undefined behavior.
+ *
+ * @param   struct dict *b
+ * @param   struct dict_iterator *it
+ * @return  struct dict_node *
+ *
+ * Returns a pointer to struct dict_node *, or NULL if iteration has
+ * completed.
+ **/
 struct dict_node *dict_iterate_intersection(struct dict *b, struct dict_iterator *it)
 {
     struct dict_node *node;
