@@ -6,8 +6,9 @@ A small, zero-dependency, general purpose hash table which uses CRC32 as a hashi
 TODO
 ====
 
-- More complete code comments.
-- More complete documentation.
+- More complete tests (leveraging valgrind).
+- Tests for dict_iterate().
+- Documentation generator.
 - Thoroughly test free() logic.
 
 Data Structures
