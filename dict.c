@@ -390,6 +390,10 @@ int dict_del(struct dict *dict, char *key)
         return status;
     }
     
+	//
+	// FIXME: Memory Leak
+	//
+	
     do {
         if (cur->hash == hash && strcmp(cur->key, key) == 0) {
             if (dict->key_free_fn) {
