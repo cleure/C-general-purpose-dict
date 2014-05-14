@@ -175,7 +175,7 @@ int main(void)
     test_values_correct(d);
     
     // Test resize... Overfills dict, forcing hash collisions
-    //assert(dict_resize(d, 16) == 1);
+    assert(dict_resize(d, 16) == 1);
     
     // Test that values are still correct
     test_values_correct(d);
