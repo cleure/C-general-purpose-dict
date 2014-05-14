@@ -31,6 +31,7 @@ struct dict_iterator {
 
 struct dict *dict_new(uint32_t seed, uint32_t capacity, void (*key_free_fn)(void *), void (*value_free_fn)(void *));
 int dict_resize(struct dict *dict, uint32_t capacity);
+struct dict *dict_clone(struct dict *to_clone, void *(*key_clone_fn)(void *), void *(*value_clone_fn)(void *));
 void dict_clear(struct dict *dict);
 void dict_delete(struct dict *dict);
 

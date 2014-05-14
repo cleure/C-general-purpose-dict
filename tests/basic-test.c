@@ -163,7 +163,7 @@ void test_values_correct(struct dict *d)
 int main(void)
 {
     size_t i;
-    struct dict *d;
+    struct dict *d, *c;
     
     d = dict_new(SEED, 512, NULL, NULL);
     for (i = 0; i < items; i++) {
@@ -179,6 +179,9 @@ int main(void)
     
     // Test that values are still correct
     test_values_correct(d);
+    
+    c = dict_clone(d, NULL, NULL);
+    test_values_correct(c);
     
     // Test deleting first 16 items
     for (i = 0; i < 16; i++) {

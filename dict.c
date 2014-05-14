@@ -8,6 +8,12 @@
 #include "crc32.h"
 #include "dict.h"
 
+// Dummy clone function.
+static void *_dummy_clone_fn(void *p)
+{
+    return p;
+}
+
 /**
  * Creates a new dict object.
  *
@@ -162,6 +168,72 @@ int dict_resize(struct dict *dict, uint32_t capacity)
     
     dict_delete(dict_tmp);
     return 1;
+}
+
+/**
+ * Clone dict object, using key_clone_fn and value_clone_fn, function pointers.
+ *
+ * If the clone function pointer for key/value is NULL, then it will simply do a
+ * static copy of the pointer. Doing this on heap allocated memory may lead to
+ * memory errors.
+ *
+ * @param   struct dict *to_clone
+ * @param   void *(*key_clone_fn)(void *)
+ * @param   void *(*value_clone_fn)(void *)
+ * @return  struct dict *
+ *
+ * Returns NULL on error.
+ **/
+struct dict *dict_clone(struct dict *to_clone, void *(*key_clone_fn)(void *), void *(*value_clone_fn)(void *))
+{
+    size_t i;
+    void *key_clone;
+    void *value_clone;
+    struct dict_node *cur;
+    struct dict *clone = dict_new(
+        to_clone->seed,
+        to_clone->capacity,
+        to_clone->key_free_fn,
+        to_clone->value_free_fn
+    );
+    
+    if (clone == NULL) {
+        return NULL;
+    }
+    
+    if (key_clone_fn == NULL) {
+        key_clone_fn = _dummy_clone_fn;
+    }
+
+    if (value_clone_fn == NULL) {
+        value_clone_fn = _dummy_clone_fn;
+    }
+    
+    for (i = 0; i < to_clone->capacity; i++) {
+        cur = &to_clone->table[i];
+        while (cur && cur->key) {
+            key_clone = key_clone_fn(cur->key);
+            value_clone = value_clone_fn(cur->value);
+        
+            if (dict_set(clone, key_clone, value_clone) == 0) {
+                // Make sure key/value gets freed
+                if (clone->key_free_fn) {
+                    clone->key_free_fn(key_clone);
+                }
+                
+                if (clone->value_free_fn) {
+                    clone->value_free_fn(value_clone);
+                }
+                
+                dict_delete(clone);
+                return NULL;
+            }
+            
+            cur = cur->next;
+        }
+    }
+    
+    return clone;
 }
 
 /**
