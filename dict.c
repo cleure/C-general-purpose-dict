@@ -376,7 +376,7 @@ struct dict_node *dict_get(struct dict *dict, char *key)
  **/
 int dict_del(struct dict *dict, char *key)
 {
-    struct dict_node *cur;
+    struct dict_node *cur, *next;
     struct dict_node *prev = NULL;
     uint32_t hash;
     uint32_t idx;
@@ -389,10 +389,6 @@ int dict_del(struct dict *dict, char *key)
     if (cur->key == NULL) {
         return status;
     }
-    
-	//
-	// FIXME: Memory Leak
-	//
 	
     do {
         if (cur->hash == hash && strcmp(cur->key, key) == 0) {
@@ -409,11 +405,14 @@ int dict_del(struct dict *dict, char *key)
                 free(cur);
                 cur = prev;
             } else {
+                // Is HEAD
                 if (cur->next != NULL) {
+                    next = cur->next;
                     cur->hash = cur->next->hash;
                     cur->key = cur->next->key;
                     cur->value = cur->next->value;
                     cur->next = cur->next->next;
+                    free(next);
                 } else {
                     cur->hash = 0;
                     cur->key = NULL;
