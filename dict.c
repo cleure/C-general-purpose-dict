@@ -389,6 +389,7 @@ int dict_del(struct dict *dict, char *key)
         return status;
     }
     
+    // Do free on linked list structure.
     prev = head;
     cur = head->next;
     while (cur != NULL) {
@@ -405,10 +406,38 @@ int dict_del(struct dict *dict, char *key)
             free(cur);
             prev->next = next;
             cur = next;
+            
+            status = 1;
         } else {
             prev = cur;
             cur = cur->next;
         }
+    }
+    
+    // Do free on head node.
+    if (head->hash == hash && strcmp(head->key, key) == 0) {
+        if (dict->key_free_fn) {
+            dict->key_free_fn(head->key);
+        }
+        
+        if (dict->value_free_fn) {
+            dict->value_free_fn(head->value);
+        }
+        
+        if (head->next) {
+            next = head->next;
+            head->hash = next->hash;
+            head->key = next->key;
+            head->value = next->value;
+            head->next = next->next;
+            free(next);
+        } else {
+            head->hash = 0;
+            head->key = NULL;
+            head->value = NULL;
+        }
+        
+        status = 1;
     }
 	
     /*
