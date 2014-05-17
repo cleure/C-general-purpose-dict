@@ -21,12 +21,33 @@ def main():
         path = os.path.join(TEST_PATH, name)
         if os.path.isfile(path) and os.access(path, os.X_OK):
             tests_run += 1
+            succeeded = True
             print('Running Test: %s' % (path))
             
-            p = subprocess.Popen(['valgrind', '--leak-check=full', path])
+            """
+            if HAVE_VALGRIND:
+                p = subprocess.Popen([
+                    'valgrind',
+                    '--leak-check=full',
+                    '--error-exitcode=1',
+                    path])
+                
+                p.communicate()
+                if p.returncode == 0:
+                    tests_succeeded += 1
+                else:
+                    succeeded = False
+            else:
+            """
+            
+            p = subprocess.Popen([path])
             p.communicate()
             if p.returncode == 0:
                 tests_succeeded += 1
+            else:
+                succeeded = False
+
+            if succeeded:
                 print('Test %s Passed' % (path))
             else:
                 print('Test %s Failed' % (path))
