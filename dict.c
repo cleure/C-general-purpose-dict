@@ -439,46 +439,6 @@ int dict_del(struct dict *dict, char *key)
         
         status = 1;
     }
-	
-    /*
-    do {
-        if (cur->hash == hash && strcmp(cur->key, key) == 0) {
-            if (dict->key_free_fn) {
-                dict->key_free_fn(cur->key);
-            }
-			
-            if (dict->value_free_fn) {
-                dict->value_free_fn(cur->value);
-            }
-		
-            if (prev != NULL) {
-                prev->next = cur->next;
-                free(cur);
-                cur = prev;
-            } else {
-                // Is HEAD
-                if (cur->next != NULL) {
-                    next = cur->next;
-                    cur->hash = cur->next->hash;
-                    cur->key = cur->next->key;
-                    cur->value = cur->next->value;
-                    cur->next = cur->next->next;
-                    free(next);
-                } else {
-                    cur->hash = 0;
-                    cur->key = NULL;
-                    cur->value = NULL;
-                }
-            }
-            
-            dict->used--;
-            status = 1;
-        }
-        
-        prev = cur;
-        cur = cur->next;
-    } while (cur);
-    */
     
     return status;
 }
