@@ -376,20 +376,42 @@ struct dict_node *dict_get(struct dict *dict, char *key)
  **/
 int dict_del(struct dict *dict, char *key)
 {
-    struct dict_node *cur, *next;
-    struct dict_node *prev = NULL;
+    struct dict_node *head, *cur, *prev, *next;
     uint32_t hash;
     uint32_t idx;
     int status = 0;
     
     hash = crc32(dict->seed, key, strlen(key));
     idx = hash % dict->capacity;
-    cur = &dict->table[idx];
+    head = &dict->table[idx];
     
-    if (cur->key == NULL) {
+    if (head->key == NULL) {
         return status;
     }
+    
+    prev = head;
+    cur = head->next;
+    while (cur != NULL) {
+        if (cur->hash == hash && strcmp(cur->key, key) == 0) {
+            if (dict->key_free_fn) {
+                dict->key_free_fn(cur->key);
+            }
+			
+            if (dict->value_free_fn) {
+                dict->value_free_fn(cur->value);
+            }
+            
+            next = cur->next;
+            free(cur);
+            prev->next = next;
+            cur = next;
+        } else {
+            prev = cur;
+            cur = cur->next;
+        }
+    }
 	
+    /*
     do {
         if (cur->hash == hash && strcmp(cur->key, key) == 0) {
             if (dict->key_free_fn) {
@@ -427,6 +449,7 @@ int dict_del(struct dict *dict, char *key)
         prev = cur;
         cur = cur->next;
     } while (cur);
+    */
     
     return status;
 }
