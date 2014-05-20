@@ -9,10 +9,10 @@
 #include "dict.h"
 
 // Dummy clone function.
-static void *_dummy_clone_fn(void *p)
-{
-    return p;
-}
+static void *_dummy_clone_fn(void *p) { return p; }
+
+// Dummy free function.
+static void _dummy_free_fn(void *p) { return; }
 
 /**
  * Creates a new dict object.
@@ -45,6 +45,14 @@ struct dict *dict_new(uint32_t seed, uint32_t capacity, void (*key_free_fn)(void
     memset(dict, 0, sizeof(*dict));
     memset(table, 0, sizeof(*table) * capacity);
     
+    if (key_free_fn == NULL) {
+        key_free_fn = _dummy_free_fn;
+    }
+    
+    if (value_free_fn == NULL) {
+        value_free_fn = _dummy_free_fn;
+    }
+    
     dict->capacity = capacity;
     dict->used = 0;
     dict->seed = seed;
@@ -74,28 +82,16 @@ void dict_clear(struct dict *dict)
                 prev = cur;
                 cur = cur->next;
 				
-                // Free key?
-                if (dict->key_free_fn != NULL) {
-                    dict->key_free_fn(prev->key);
-                }
-				
-                // Free value?
-                if (dict->value_free_fn != NULL) {
-                    dict->value_free_fn(prev->value);
-                }
+                // Free key/value.
+                dict->key_free_fn(prev->key);
+                dict->value_free_fn(prev->value);
 				
                 free(prev);
             }
             
-            // Free key?
-            if (dict->key_free_fn != NULL) {
-                dict->key_free_fn(dict->table[i].key);
-            }
-			
-            // Free value?
-            if (dict->value_free_fn != NULL) {
-                dict->value_free_fn(dict->table[i].value);
-            }
+            // Free key/value.
+            dict->key_free_fn(dict->table[i].key);
+            dict->value_free_fn(dict->table[i].value);
 			
             dict->table[i].hash = 0;
             dict->table[i].key = NULL;
@@ -217,13 +213,8 @@ struct dict *dict_clone(struct dict *to_clone, void *(*key_clone_fn)(void *), vo
         
             if (dict_set(clone, key_clone, value_clone) == 0) {
                 // Make sure key/value gets freed
-                if (clone->key_free_fn) {
-                    clone->key_free_fn(key_clone);
-                }
-                
-                if (clone->value_free_fn) {
-                    clone->value_free_fn(value_clone);
-                }
+                clone->key_free_fn(key_clone);
+                clone->value_free_fn(value_clone);
                 
                 dict_delete(clone);
                 return NULL;
@@ -266,15 +257,9 @@ int dict_set(struct dict *dict, char *key, void *value)
         dict->used++;
         return 1;
     } else if (cur->hash == hash && strcmp(cur->key, key) == 0) {
-        // Free key?
-        if (dict->key_free_fn) {
-            dict->key_free_fn(cur->key);
-        }
-
-        // Free value?
-        if (dict->value_free_fn) {
-            dict->key_free_fn(cur->value);
-        }
+        // Free key/value.
+        dict->key_free_fn(cur->key);
+        dict->key_free_fn(cur->value);
 	
         cur->hash = hash;
         cur->key = key;
@@ -394,13 +379,9 @@ int dict_del(struct dict *dict, char *key)
     cur = head->next;
     while (cur != NULL) {
         if (cur->hash == hash && strcmp(cur->key, key) == 0) {
-            if (dict->key_free_fn) {
-                dict->key_free_fn(cur->key);
-            }
-			
-            if (dict->value_free_fn) {
-                dict->value_free_fn(cur->value);
-            }
+            // Free key/value.
+            dict->key_free_fn(cur->key);
+            dict->value_free_fn(cur->value);
             
             next = cur->next;
             free(cur);
@@ -416,13 +397,9 @@ int dict_del(struct dict *dict, char *key)
     
     // Do free on head node.
     if (head->hash == hash && strcmp(head->key, key) == 0) {
-        if (dict->key_free_fn) {
-            dict->key_free_fn(head->key);
-        }
-        
-        if (dict->value_free_fn) {
-            dict->value_free_fn(head->value);
-        }
+        // Free key/value.
+        dict->key_free_fn(head->key);
+        dict->value_free_fn(head->value);
         
         if (head->next) {
             next = head->next;
